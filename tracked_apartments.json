@@ -1,0 +1,7 @@
+{
+  "apartments": [
+    {"id": 1, "address": "344 East 110th Street #6D", "rent": 2650, "neighborhood": "East Harlem", "url": "https://streeteasy.com/rental/", "broker": "Cole Someck", "notes": "Private terrace, flexible lease, 700+ credit", "status": "interested", "40x_pass": true},
+    {"id": 2, "address": "3rd Floor Unit (off-market)", "rent": 2700, "neighborhood": "East Harlem", "url": "https://streeteasy.com/rental/3265122", "broker": "Doron Sher", "notes": "Negotiable to $2,600", "status": "interested", "40x_pass": true},
+    {"id": 3, "address": "222 East 95th Street #10", "rent": 3200, "neighborhood": "Yorkville/UES", "url": "https://streeteasy.com/", "broker": null, "notes": "Co-op, no board approval", "status": "interested", "40x_pass": false}
+  ]
+}
