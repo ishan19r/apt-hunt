@@ -21,3 +21,22 @@ python apartment_tracker.py  # View tracked apartments
 
 ## Current Top Pick
 **Doron's 3rd floor unit @ $2,700** - Try to negotiate to $2,600
+
+## Testing
+
+Run all tests:
+```bash
+python run_tests.py
+```
+
+Run specific test suites:
+```bash
+python -m pytest tests/test_unit.py        # Unit tests
+python -m pytest tests/test_integration.py  # Integration tests
+python -m pytest tests/test_e2e.py          # End-to-end tests
+```
+
+### Test Coverage
+- **Unit Tests**: Affordability calculations, budget math, criteria validation
+- **Integration Tests**: File I/O, tracker persistence, response generation
+- **E2E Tests**: Full workflows (search → track → inquire → negotiate)
