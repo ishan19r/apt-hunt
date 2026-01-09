@@ -1,0 +1,8 @@
+flask==3.0.0
+flask-socketio==5.3.6
+selenium==4.15.2
+webdriver-manager==4.0.1
+beautifulsoup4==4.12.2
+requests==2.31.0
+python-dotenv==1.0.0
+eventlet==0.34.2

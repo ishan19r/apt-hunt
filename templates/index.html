@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏠 Apartment Hunter - Ishan</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        header { background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%); padding: 30px; border-radius: 16px; margin-bottom: 30px; border: 1px solid #334155; }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        h1 span { color: #38bdf8; }
+        .subtitle { color: #94a3b8; font-size: 1.1rem; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
+        .stat { background: #1e293b; padding: 15px; border-radius: 10px; text-align: center; }
+        .stat-value { font-size: 1.8rem; font-weight: bold; color: #38bdf8; }
+        .stat-label { font-size: 0.85rem; color: #94a3b8; }
+        .controls { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 30px; }
+        button { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 500; transition: all 0.2s; }
+        button:hover { background: #2563eb; transform: translateY(-1px); }
+        button:disabled { background: #475569; cursor: not-allowed; }
+        button.secondary { background: #475569; }
+        button.secondary:hover { background: #64748b; }
+        button.success { background: #10b981; }
+        button.success:hover { background: #059669; }
+        button.danger { background: #ef4444; }
+        button.danger:hover { background: #dc2626; }
+        .status-bar { background: #1e293b; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #38bdf8; }
+        .status-bar.error { border-left-color: #ef4444; }
+        .status-bar.success { border-left-color: #10b981; }
+        .apartments { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+        .apt-card { background: #1e293b; border-radius: 12px; overflow: hidden; border: 2px solid transparent; transition: all 0.2s; }
+        .apt-card:hover { border-color: #3b82f6; transform: translateY(-2px); }
+        .apt-card.selected { border-color: #10b981; box-shadow: 0 0 20px rgba(16, 185, 129, 0.2); }
+        .apt-card.fail-40x { opacity: 0.7; }
+        .apt-image { height: 180px; background: #334155; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .apt-image img { width: 100%; height: 100%; object-fit: cover; }
+        .apt-image .no-image { color: #64748b; font-size: 3rem; }
+        .apt-content { padding: 20px; }
+        .apt-address { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; }
+        .apt-neighborhood { color: #94a3b8; font-size: 0.9rem; margin-bottom: 12px; }
+        .apt-rent { font-size: 1.5rem; font-weight: bold; color: #38bdf8; margin-bottom: 8px; }
+        .apt-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 500; }
+        .badge.pass { background: #064e3b; color: #34d399; }
+        .badge.fail { background: #7f1d1d; color: #fca5a5; }
+        .badge.new { background: #1e3a8a; color: #93c5fd; }
+        .badge.contacted { background: #365314; color: #bef264; }
+        .apt-budget { background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 0.85rem; }
+        .budget-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .budget-row span:last-child { color: #38bdf8; }
+        .apt-actions { display: flex; gap: 10px; }
+        .apt-actions button { flex: 1; padding: 10px; font-size: 0.9rem; }
+        .checkbox-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .checkbox-wrapper input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: #1e293b; padding: 30px; border-radius: 16px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-close { background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; }
+        textarea { width: 100%; height: 200px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; padding: 15px; font-family: inherit; font-size: 0.95rem; resize: vertical; }
+        .filter-section { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .filter-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-size: 0.85rem; color: #94a3b8; }
+        .filter-group input, .filter-group select { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 8px 12px; color: #e2e8f0; }
+        .log { background: #0f172a; padding: 15px; border-radius: 8px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; margin-top: 20px; }
+        .log-entry { padding: 4px 0; border-bottom: 1px solid #1e293b; }
+        .log-entry.error { color: #fca5a5; }
+        .log-entry.success { color: #34d399; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏠 <span>Apartment Hunter</span></h1>
+            <p class="subtitle">Automated NYC apartment search for Ishan</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="total-count">0</div>
+                    <div class="stat-label">Total Listings</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="pass-count">0</div>
+                    <div class="stat-label">Pass 40x Rule</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="selected-count">0</div>
+                    <div class="stat-label">Selected</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">$2,750</div>
+                    <div class="stat-label">Max Rent (40x)</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="filter-section">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Min Rent</label>
+                    <input type="number" id="min-rent" value="2400">
+                </div>
+                <div class="filter-group">
+                    <label>Max Rent</label>
+                    <input type="number" id="max-rent" value="3200">
+                </div>
+                <div class="filter-group">
+                    <label>Neighborhoods</label>
+                    <select id="neighborhoods" multiple style="height: 80px;">
+                        <option value="east-harlem" selected>East Harlem</option>
+                        <option value="yorkville" selected>Yorkville</option>
+                        <option value="upper-east-side" selected>Upper East Side</option>
+                        <option value="harlem" selected>Harlem</option>
+                        <option value="washington-heights">Washington Heights</option>
+                        <option value="inwood">Inwood</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="scrape-btn" onclick="startScrape()">🔍 Search StreetEasy</button>
+            <button id="send-btn" class="success" onclick="sendInquiries()">📧 Send Selected Inquiries</button>
+            <button class="secondary" onclick="selectAllPassing()">✅ Select All Passing</button>
+            <button class="secondary" onclick="clearSelection()">❌ Clear Selection</button>
+            <button class="danger" onclick="clearAll()">🗑️ Clear All</button>
+        </div>
+
+        <div class="status-bar" id="status-bar">
+            Ready to search. Click "Search StreetEasy" to find apartments.
+        </div>
+
+        <div class="apartments" id="apartments-grid"></div>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <!-- Inquiry Preview Modal -->
+    <div class="modal" id="inquiry-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📧 Inquiry Preview</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <p id="modal-address" style="color: #94a3b8; margin-bottom: 15px;"></p>
+            <textarea id="inquiry-text" readonly></textarea>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button onclick="copyInquiry()">📋 Copy to Clipboard</button>
+                <button class="secondary" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let apartments = [];
+
+        socket.on('connect', () => {
+            log('Connected to server', 'success');
+            loadApartments();
+        });
+
+        socket.on('status', (data) => {
+            updateStatus(data.message);
+            log(data.message);
+        });
+
+        socket.on('listing_found', (apt) => {
+            log(`Found: ${apt.address} - $${apt.rent}/mo`);
+        });
+
+        socket.on('scrape_complete', (data) => {
+            updateStatus(data.message, 'success');
+            log(data.message, 'success');
+            loadApartments();
+            document.getElementById('scrape-btn').disabled = false;
+        });
+
+        socket.on('inquiry_ready', (data) => {
+            log(`Inquiry ready for ${data.address}`, 'success');
+        });
+
+        socket.on('inquiries_complete', (data) => {
+            updateStatus(data.message, 'success');
+            log(data.message, 'success');
+            loadApartments();
+            document.getElementById('send-btn').disabled = false;
+        });
+
+        function updateStatus(message, type = '') {
+            const bar = document.getElementById('status-bar');
+            bar.textContent = message;
+            bar.className = 'status-bar ' + type;
+        }
+
+        function log(message, type = '') {
+            const logEl = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + type;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logEl.insertBefore(entry, logEl.firstChild);
+        }
+
+        async function loadApartments() {
+            const res = await fetch('/api/apartments');
+            apartments = await res.json();
+            renderApartments();
+            updateStats();
+        }
+
+        function renderApartments() {
+            const grid = document.getElementById('apartments-grid');
+            grid.innerHTML = apartments.map(apt => `
+                <div class="apt-card ${apt.selected ? 'selected' : ''} ${!apt['40x_pass'] ? 'fail-40x' : ''}" id="apt-${apt.id}">
+                    <div class="apt-image">
+                        ${apt.image_url ? `<img src="${apt.image_url}" alt="${apt.address}">` : '<div class="no-image">🏠</div>'}
+                    </div>
+                    <div class="apt-content">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" ${apt.selected ? 'checked' : ''} onchange="toggleSelect(${apt.id})">
+                            <span>Select for inquiry</span>
+                        </div>
+                        <div class="apt-address">${apt.address}</div>
+                        <div class="apt-neighborhood">📍 ${apt.neighborhood}</div>
+                        <div class="apt-rent">$${apt.rent.toLocaleString()}/mo</div>
+                        <div class="apt-badges">
+                            <span class="badge ${apt['40x_pass'] ? 'pass' : 'fail'}">${apt['40x_pass'] ? '✅ Passes 40x' : '❌ Fails 40x'}</span>
+                            <span class="badge ${apt.status}">${apt.status}</span>
+                        </div>
+                        <div class="apt-budget">
+                            <div class="budget-row"><span>Dining Out:</span><span>$${apt.budget?.dining_out || 0}/mo</span></div>
+                            <div class="budget-row"><span>Savings:</span><span>$${apt.budget?.savings || 0}/mo</span></div>
+                        </div>
+                        <div class="apt-actions">
+                            <button onclick="window.open('${apt.url}', '_blank')">🔗 View</button>
+                            <button class="secondary" onclick="previewInquiry(${apt.id})">📧 Preview</button>
+                            <button class="danger" onclick="deleteApt(${apt.id})">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('total-count').textContent = apartments.length;
+            document.getElementById('pass-count').textContent = apartments.filter(a => a['40x_pass']).length;
+            document.getElementById('selected-count').textContent = apartments.filter(a => a.selected).length;
+        }
+
+        async function toggleSelect(id) {
+            await fetch(`/api/apartments/${id}/select`, { method: 'POST' });
+            loadApartments();
+        }
+
+        async function deleteApt(id) {
+            if (confirm('Delete this apartment?')) {
+                await fetch(`/api/apartments/${id}`, { method: 'DELETE' });
+                loadApartments();
+            }
+        }
+
+        async function previewInquiry(id) {
+            const res = await fetch(`/api/inquiry/${id}`);
+            const data = await res.json();
+            document.getElementById('modal-address').textContent = data.apartment.address;
+            document.getElementById('inquiry-text').value = data.message;
+            document.getElementById('inquiry-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('inquiry-modal').classList.remove('active');
+        }
+
+        function copyInquiry() {
+            const text = document.getElementById('inquiry-text');
+            text.select();
+            document.execCommand('copy');
+            alert('Copied to clipboard!');
+        }
+
+        function startScrape() {
+            const btn = document.getElementById('scrape-btn');
+            btn.disabled = true;
+            
+            const neighborhoods = Array.from(document.getElementById('neighborhoods').selectedOptions).map(o => o.value);
+            const minRent = parseInt(document.getElementById('min-rent').value);
+            const maxRent = parseInt(document.getElementById('max-rent').value);
+            
+            socket.emit('start_scrape', { neighborhoods, min_rent: minRent, max_rent: maxRent });
+            updateStatus('Starting apartment search...');
+        }
+
+        function sendInquiries() {
+            const selected = apartments.filter(a => a.selected);
+            if (selected.length === 0) {
+                alert('Please select apartments first');
+                return;
+            }
+            
+            if (!confirm(`Send inquiries to ${selected.length} apartments?`)) return;
+            
+            document.getElementById('send-btn').disabled = true;
+            socket.emit('send_inquiries', { apartment_ids: selected.map(a => a.id) });
+            updateStatus(`Sending ${selected.length} inquiries...`);
+        }
+
+        function selectAllPassing() {
+            apartments.filter(a => a['40x_pass'] && !a.selected).forEach(apt => {
+                fetch(`/api/apartments/${apt.id}/select`, { method: 'POST' });
+            });
+            setTimeout(loadApartments, 500);
+        }
+
+        function clearSelection() {
+            apartments.filter(a => a.selected).forEach(apt => {
+                fetch(`/api/apartments/${apt.id}/select`, { method: 'POST' });
+            });
+            setTimeout(loadApartments, 500);
+        }
+
+        async function clearAll() {
+            if (!confirm('Delete ALL apartments?')) return;
+            for (const apt of apartments) {
+                await fetch(`/api/apartments/${apt.id}`, { method: 'DELETE' });
+            }
+            loadApartments();
+        }
+
+        // Load on page load
+        loadApartments();
+    </script>
+</body>
+</html>

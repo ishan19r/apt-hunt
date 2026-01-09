@@ -40,3 +40,37 @@ python -m pytest tests/test_e2e.py          # End-to-end tests
 - **Unit Tests**: Affordability calculations, budget math, criteria validation
 - **Integration Tests**: File I/O, tracker persistence, response generation
 - **E2E Tests**: Full workflows (search → track → inquire → negotiate)
+
+## 🌐 Web App (Browser Automation)
+
+### Quick Start
+```bash
+# Windows
+run.bat
+
+# Mac/Linux
+./run.sh
+```
+
+Then open **http://localhost:5000**
+
+### Features
+- **🔍 Auto-Search**: Scrapes StreetEasy listings matching your criteria
+- **✅ Smart Filtering**: Shows 40x income rule pass/fail for each listing
+- **📊 Budget Impact**: See dining out & savings for each rent level
+- **☑️ Select & Send**: Check apartments you like, send bulk inquiries
+- **📧 Auto-Fill**: Browser fills inquiry forms automatically
+- **🔗 Direct Links**: Click to view any listing on StreetEasy
+
+### How It Works
+1. Set your rent range and neighborhoods
+2. Click "Search StreetEasy" - bot scrapes listings
+3. Review results, check boxes for ones you like
+4. Click "Send Selected Inquiries" - browser opens and fills forms
+5. Review each form and click submit (handles CAPTCHAs manually)
+
+### Tech Stack
+- Flask + Flask-SocketIO (real-time updates)
+- Selenium (browser automation)
+- BeautifulSoup (HTML parsing)
+- WebDriver Manager (auto Chrome driver)
